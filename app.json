@@ -29,8 +29,7 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes.",
           "recordAudioAndroid": false
         }
-      ],
-      "expo-status-bar"
+      ]
     ]
   }
 }
