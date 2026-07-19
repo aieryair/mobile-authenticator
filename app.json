@@ -16,7 +16,11 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "package": "com.aiery.mobileauthenticator"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +34,11 @@
           "recordAudioAndroid": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0bf29e6d-ec74-4e36-9705-af07ef6b2b72"
+      }
+    }
   }
 }
