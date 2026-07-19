@@ -58,10 +58,10 @@ function toTotp(account: Account): OTPAuth.TOTP {
   });
 }
 
-export function generateCode(account: Account): string {
-  return toTotp(account).generate();
+export function generateCode(account: Account, timestamp = Date.now()): string {
+  return toTotp(account).generate({ timestamp });
 }
 
-export function getRemainingMillis(account: Account): number {
-  return OTPAuth.TOTP.remaining({ period: account.period });
+export function getRemainingMillis(account: Account, timestamp = Date.now()): number {
+  return OTPAuth.TOTP.remaining({ period: account.period, timestamp });
 }
