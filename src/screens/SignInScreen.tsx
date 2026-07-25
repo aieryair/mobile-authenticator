@@ -1,17 +1,16 @@
-import * as Crypto from 'expo-crypto';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { parseOtpauthUri } from '../lib/otp';
-import type { Account } from '../types/account';
+import { parseSignInQr } from '../lib/qr';
+import type { SignInPayload } from '../lib/qr';
 
 interface Props {
-  onSave: (account: Account) => void;
+  onScanned: (payload: SignInPayload) => void;
   onCancel: () => void;
 }
 
-export function ScanScreen({ onSave, onCancel }: Props) {
+export function SignInScreen({ onScanned, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -21,10 +20,10 @@ export function ScanScreen({ onSave, onCancel }: Props) {
     }
     setScanned(true);
     try {
-      const account = parseOtpauthUri(data);
-      onSave({ id: Crypto.randomUUID(), ...account });
+      const payload = parseSignInQr(data);
+      onScanned(payload);
     } catch {
-      Alert.alert('Not a valid authenticator QR code', 'Try scanning again.', [
+      Alert.alert('Not a valid sign-in QR code', 'Ask the admin for a new code and try again.', [
         { text: 'OK', onPress: () => setScanned(false) },
       ]);
     }
@@ -39,7 +38,7 @@ export function ScanScreen({ onSave, onCancel }: Props) {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.center}>
           <Text style={styles.message}>
-            Camera access is needed to scan QR codes.
+            Camera access is needed to scan the sign-in QR code.
             {!permission.canAskAgain
               ? ' Enable it for this app in your device Settings.'
               : ''}
@@ -69,6 +68,7 @@ export function ScanScreen({ onSave, onCancel }: Props) {
         <Pressable style={styles.cancelButton} onPress={onCancel}>
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>
+        <Text style={styles.instructions}>Scan the sign-in QR code from the admin</Text>
         <View style={styles.frame} pointerEvents="none" />
       </SafeAreaView>
     </View>
@@ -122,6 +122,13 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#fff',
     fontSize: 15,
+  },
+  instructions: {
+    color: '#fff',
+    fontSize: 15,
+    textAlign: 'center',
+    marginHorizontal: 32,
+    marginTop: 20,
   },
   frame: {
     width: 240,

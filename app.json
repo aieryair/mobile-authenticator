@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Authenticator",
+    "name": "Deckonomics Courier",
     "slug": "mobile-authenticator",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -30,7 +30,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan the sign-in QR code.",
           "recordAudioAndroid": false
         }
       ]
