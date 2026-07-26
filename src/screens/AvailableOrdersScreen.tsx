@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrderListItem } from '../components/OrderListItem';
 import { claimOrder, listOrders } from '../lib/api';
@@ -115,11 +124,13 @@ export function AvailableOrdersScreen({
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         contentContainerStyle={orders.length === 0 && styles.emptyContainer}
         ListEmptyComponent={
-          loading ? null : (
-            <View style={styles.empty}>
+          <View style={styles.empty}>
+            {loading ? (
+              <ActivityIndicator />
+            ) : (
               <Text style={styles.emptyText}>No orders ready to deliver right now.</Text>
-            </View>
-          )
+            )}
+          </View>
         }
         renderItem={({ item }) => (
           <OrderListItem

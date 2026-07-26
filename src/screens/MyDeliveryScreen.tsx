@@ -36,7 +36,9 @@ export function MyDeliveryScreen({ order, courierLabel, onDone, onBack, onUnauth
       onUnauthorized();
       return;
     }
-    Alert.alert(title, err.message, [{ text: 'OK', onPress: onDone }]);
+    // Stay on this screen and keep the local claim intact — the action
+    // failed, so as far as this device knows the order is still ours.
+    Alert.alert(title, err.message);
   };
 
   const handleDeliver = () => {
@@ -85,7 +87,7 @@ export function MyDeliveryScreen({ order, courierLabel, onDone, onBack, onUnauth
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           ref={scrollViewRef}
