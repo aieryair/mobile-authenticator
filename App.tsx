@@ -1,21 +1,27 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { OrderQrPayload } from './src/lib/qr';
-import { removeScannedOrder, upsertScannedOrder } from './src/lib/storage';
+import { loadCourierLabel, removeScannedOrder, saveCourierLabel, upsertScannedOrder } from './src/lib/storage';
 import type { OrderCredentials } from './src/lib/storage';
 import { AddOrderScreen } from './src/screens/AddOrderScreen';
+import { EditNameScreen } from './src/screens/EditNameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ManualOrderEntryScreen } from './src/screens/ManualOrderEntryScreen';
 import { OrderDetailScreen } from './src/screens/OrderDetailScreen';
 import { ScanOrderScreen } from './src/screens/ScanOrderScreen';
 
-type Mode = 'home' | 'add-choice' | 'add-scan' | 'add-manual' | 'order-detail';
+type Mode = 'home' | 'add-choice' | 'add-scan' | 'add-manual' | 'order-detail' | 'edit-name';
 
 export default function App() {
   const [mode, setMode] = useState<Mode>('home');
   const [selectedOrder, setSelectedOrder] = useState<OrderCredentials | null>(null);
+  const [courierLabel, setCourierLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadCourierLabel().then(setCourierLabel);
+  }, []);
 
   const handleOrderAdded = async (payload: OrderQrPayload) => {
     await upsertScannedOrder(payload);
@@ -39,11 +45,27 @@ export default function App() {
     setMode('home');
   };
 
+  // Wherever "edit name" was opened from is still intact (the order detail
+  // screen doesn't lose its selected order just because settings is open),
+  // so both save and cancel return to it instead of always going home.
+  const returnFromNameEdit = () => setMode(selectedOrder ? 'order-detail' : 'home');
+
+  const handleNameSaved = async (label: string) => {
+    await saveCourierLabel(label);
+    setCourierLabel(label);
+    returnFromNameEdit();
+  };
+
   return (
     <SafeAreaProvider>
       <View style={styles.container}>
         {mode === 'home' && (
-          <HomeScreen onAddOrder={() => setMode('add-choice')} onSelectOrder={handleSelectOrder} />
+          <HomeScreen
+            courierLabel={courierLabel}
+            onAddOrder={() => setMode('add-choice')}
+            onSelectOrder={handleSelectOrder}
+            onEditName={() => setMode('edit-name')}
+          />
         )}
         {mode === 'add-choice' && (
           <AddOrderScreen
@@ -62,9 +84,18 @@ export default function App() {
         {mode === 'order-detail' && selectedOrder && (
           <OrderDetailScreen
             creds={selectedOrder}
+            courierLabel={courierLabel}
+            onEditName={() => setMode('edit-name')}
             onBack={() => setMode('home')}
             onRemoved={forgetSelectedOrder}
             onUnauthorized={forgetSelectedOrder}
+          />
+        )}
+        {mode === 'edit-name' && (
+          <EditNameScreen
+            currentName={courierLabel}
+            onSave={handleNameSaved}
+            onCancel={returnFromNameEdit}
           />
         )}
         <StatusBar style="auto" />

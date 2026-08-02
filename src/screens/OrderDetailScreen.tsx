@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { claimOrder, deliverOrder, getOrder, reportIssue } from '../lib/api';
 import type { ApiError } from '../lib/api';
-import { loadCourierLabel, saveCourierLabel } from '../lib/storage';
 import type { OrderCredentials } from '../lib/storage';
 import type { Order, OrderStatus } from '../types/order';
 
@@ -27,15 +26,23 @@ function isTerminalStatus(status: OrderStatus): boolean {
 
 interface Props {
   creds: OrderCredentials;
+  courierLabel: string | null;
+  onEditName: () => void;
   onBack: () => void;
   onRemoved: () => void;
   onUnauthorized: () => void;
 }
 
-export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: Props) {
+export function OrderDetailScreen({
+  creds,
+  courierLabel,
+  onEditName,
+  onBack,
+  onRemoved,
+  onUnauthorized,
+}: Props) {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [courierLabel, setCourierLabel] = useState('');
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -50,14 +57,6 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
   useEffect(() => {
     submittingRef.current = submitting;
   }, [submitting]);
-
-  useEffect(() => {
-    loadCourierLabel().then((label) => {
-      if (label) {
-        setCourierLabel(label);
-      }
-    });
-  }, []);
 
   const handleFailure = (error: unknown, title: string) => {
     const err = error as ApiError;
@@ -157,21 +156,15 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
     return () => clearInterval(intervalId);
   }, [creds, onBack]);
 
-  const persistLabel = async (label: string) => {
-    setCourierLabel(label);
-    await saveCourierLabel(label);
-  };
-
   const handleClaim = async () => {
-    const label = courierLabel.trim();
+    const label = courierLabel?.trim();
     if (!label) {
-      Alert.alert('Your name is required', "Enter your name so the admin knows who has this order.");
+      onEditName();
       return;
     }
     setSubmitting(true);
     try {
       const result = await claimOrder(creds, label);
-      await persistLabel(label);
       setOrder(result.order);
     } catch (error) {
       const err = error as ApiError;
@@ -207,14 +200,17 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
   };
 
   const handleSubmitIssue = async () => {
-    const label = courierLabel.trim();
-    if (!label || !reason.trim()) {
+    const label = courierLabel?.trim();
+    if (!label) {
+      onEditName();
+      return;
+    }
+    if (!reason.trim()) {
       return;
     }
     setSubmitting(true);
     try {
       const result = await reportIssue(creds, reason.trim(), label);
-      await persistLabel(label);
       setOrder(result.order);
       setReporting(false);
     } catch (error) {
@@ -301,24 +297,21 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
 
           {isPaid && (
             <View>
-              <Text style={styles.fieldLabel}>Your name</Text>
-              <TextInput
-                style={styles.input}
-                value={courierLabel}
-                onChangeText={setCourierLabel}
-                placeholder="e.g. Juan"
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
+              {courierLabel ? (
+                <Text style={styles.fieldLabel}>Claiming as {courierLabel}</Text>
+              ) : (
+                <Text style={styles.fieldLabel}>
+                  Set your name before claiming an order.
+                </Text>
+              )}
               <Pressable
-                style={[
-                  styles.primaryButtonFull,
-                  (!courierLabel.trim() || submitting) && styles.buttonDisabled,
-                ]}
+                style={[styles.primaryButtonFull, submitting && styles.buttonDisabled]}
                 onPress={handleClaim}
-                disabled={!courierLabel.trim() || submitting}
+                disabled={submitting}
               >
-                <Text style={styles.primaryButtonText}>Claim This Order</Text>
+                <Text style={styles.primaryButtonText}>
+                  {courierLabel ? 'Claim This Order' : 'Set Your Name'}
+                </Text>
               </Pressable>
             </View>
           )}
@@ -326,43 +319,51 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
           {isShipping &&
             (reporting ? (
               <View>
-                <Text style={styles.fieldLabel}>Your name</Text>
-                <TextInput
-                  style={styles.input}
-                  value={courierLabel}
-                  onChangeText={setCourierLabel}
-                  placeholder="e.g. Juan"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-                <Text style={styles.fieldLabel}>What went wrong?</Text>
-                <TextInput
-                  style={styles.input}
-                  value={reason}
-                  onChangeText={setReason}
-                  placeholder="e.g. Address not found"
-                  multiline
-                  autoFocus
-                />
-                <View style={styles.buttonRow}>
-                  <Pressable
-                    style={styles.secondaryButton}
-                    onPress={() => setReporting(false)}
-                    disabled={submitting}
-                  >
-                    <Text style={styles.secondaryButtonText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[
-                      styles.dangerButton,
-                      (!reason.trim() || !courierLabel.trim()) && styles.buttonDisabled,
-                    ]}
-                    onPress={handleSubmitIssue}
-                    disabled={submitting || !reason.trim() || !courierLabel.trim()}
-                  >
-                    <Text style={styles.dangerButtonText}>Submit</Text>
-                  </Pressable>
-                </View>
+                {courierLabel ? (
+                  <>
+                    <Text style={styles.fieldLabel}>What went wrong?</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={reason}
+                      onChangeText={setReason}
+                      placeholder="e.g. Address not found"
+                      multiline
+                      autoFocus
+                    />
+                    <View style={styles.buttonRow}>
+                      <Pressable
+                        style={styles.secondaryButton}
+                        onPress={() => setReporting(false)}
+                        disabled={submitting}
+                      >
+                        <Text style={styles.secondaryButtonText}>Cancel</Text>
+                      </Pressable>
+                      <Pressable
+                        style={[styles.dangerButton, !reason.trim() && styles.buttonDisabled]}
+                        onPress={handleSubmitIssue}
+                        disabled={submitting || !reason.trim()}
+                      >
+                        <Text style={styles.dangerButtonText}>Submit</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.fieldLabel}>Set your name before reporting an issue.</Text>
+                    <View style={styles.buttonRow}>
+                      <Pressable
+                        style={styles.secondaryButton}
+                        onPress={() => setReporting(false)}
+                        disabled={submitting}
+                      >
+                        <Text style={styles.secondaryButtonText}>Cancel</Text>
+                      </Pressable>
+                      <Pressable style={styles.primaryButton} onPress={onEditName}>
+                        <Text style={styles.primaryButtonText}>Set Your Name</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                )}
               </View>
             ) : (
               <View style={styles.buttonRow}>

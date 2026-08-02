@@ -21,11 +21,13 @@ interface Entry {
 }
 
 interface Props {
+  courierLabel: string | null;
   onAddOrder: () => void;
   onSelectOrder: (creds: OrderCredentials) => void;
+  onEditName: () => void;
 }
 
-export function HomeScreen({ onAddOrder, onSelectOrder }: Props) {
+export function HomeScreen({ courierLabel, onAddOrder, onSelectOrder, onEditName }: Props) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -78,6 +80,12 @@ export function HomeScreen({ onAddOrder, onSelectOrder }: Props) {
           <Text style={styles.scanButtonText}>Scan QR Code</Text>
         </Pressable>
       </View>
+      <Pressable style={styles.nameRow} onPress={onEditName}>
+        <Text style={styles.nameText}>
+          {courierLabel ? `Delivering as ${courierLabel}` : 'Set your name'}
+        </Text>
+        <Text style={styles.nameAction}>{courierLabel ? 'Change' : 'Set'}</Text>
+      </Pressable>
       <FlatList
         data={entries}
         keyExtractor={(entry) => String(entry.creds.orderId)}
@@ -150,6 +158,22 @@ const styles = StyleSheet.create({
   scanButtonText: {
     color: '#fff',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  nameText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  nameAction: {
+    fontSize: 13,
+    color: '#4a90d9',
     fontWeight: '600',
   },
   emptyContainer: {
