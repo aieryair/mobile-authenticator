@@ -1,23 +1,22 @@
-import { loadCredentials } from './storage';
+import type { OrderCredentials } from './storage';
 import type { Order } from '../types/order';
 
 export interface ApiError extends Error {
   status?: number;
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const credentials = await loadCredentials();
-  if (!credentials) {
-    throw new Error('Not signed in.');
-  }
-
+async function request<T>(
+  creds: OrderCredentials,
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${credentials.apiUrl}${path}`, {
+    response = await fetch(`${creds.apiUrl}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${credentials.token}`,
+        Authorization: `Bearer ${creds.token}`,
         ...options.headers,
       },
     });
@@ -41,30 +40,30 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
-export function listOrders(status: 'paid' | 'shipping') {
-  return request<{ success: true; orders: Order[] }>(`/api/courier/orders?status=${status}`);
+export function getOrder(creds: OrderCredentials) {
+  return request<{ success: true; order: Order }>(creds, `/api/courier/orders/${creds.orderId}`);
 }
 
-export function getOrder(id: number) {
-  return request<{ success: true; order: Order }>(`/api/courier/orders/${id}`);
-}
-
-export function claimOrder(id: number, courierLabel: string) {
-  return request<{ success: true; order: Order }>(`/api/courier/orders/${id}/claim`, {
+export function claimOrder(creds: OrderCredentials, courierLabel: string) {
+  return request<{ success: true; order: Order }>(creds, `/api/courier/orders/${creds.orderId}/claim`, {
     method: 'POST',
     body: JSON.stringify({ courier_label: courierLabel }),
   });
 }
 
-export function deliverOrder(id: number) {
-  return request<{ success: true }>(`/api/courier/orders/${id}/deliver`, {
+export function deliverOrder(creds: OrderCredentials) {
+  return request<{ success: true; order: Order }>(creds, `/api/courier/orders/${creds.orderId}/deliver`, {
     method: 'POST',
   });
 }
 
-export function reportIssue(id: number, reason: string, courierLabel: string) {
-  return request<{ success: true }>(`/api/courier/orders/${id}/report-issue`, {
-    method: 'POST',
-    body: JSON.stringify({ reason, courier_label: courierLabel }),
-  });
+export function reportIssue(creds: OrderCredentials, reason: string, courierLabel: string) {
+  return request<{ success: true; order: Order }>(
+    creds,
+    `/api/courier/orders/${creds.orderId}/report-issue`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ reason, courier_label: courierLabel }),
+    }
+  );
 }

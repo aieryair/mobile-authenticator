@@ -10,24 +10,31 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { normalizeApiUrl } from '../lib/qr';
-import type { SignInPayload } from '../lib/qr';
+import type { OrderQrPayload } from '../lib/qr';
 
 interface Props {
-  onSubmit: (payload: SignInPayload) => void;
+  onSubmit: (payload: OrderQrPayload) => void;
   onCancel: () => void;
 }
 
-export function ManualSignInScreen({ onSubmit, onCancel }: Props) {
+export function ManualOrderEntryScreen({ onSubmit, onCancel }: Props) {
   const [apiUrl, setApiUrl] = useState('');
+  const [orderId, setOrderId] = useState('');
   const [token, setToken] = useState('');
 
-  const canSave = apiUrl.trim().length > 0 && token.trim().length > 0;
+  const trimmedOrderId = orderId.trim();
+  const canSave =
+    apiUrl.trim().length > 0 && /^\d+$/.test(trimmedOrderId) && token.trim().length > 0;
 
   const handleSave = () => {
     if (!canSave) {
       return;
     }
-    onSubmit({ apiUrl: normalizeApiUrl(apiUrl), token: token.trim() });
+    onSubmit({
+      apiUrl: normalizeApiUrl(apiUrl),
+      orderId: Number(trimmedOrderId),
+      token: token.trim(),
+    });
   };
 
   return (
@@ -40,7 +47,7 @@ export function ManualSignInScreen({ onSubmit, onCancel }: Props) {
           <Pressable onPress={onCancel}>
             <Text style={styles.headerAction}>Cancel</Text>
           </Pressable>
-          <Text style={styles.title}>Sign In</Text>
+          <Text style={styles.title}>Add Order</Text>
           <Pressable onPress={handleSave} disabled={!canSave}>
             <Text style={[styles.headerAction, !canSave && styles.headerActionDisabled]}>Save</Text>
           </Pressable>
@@ -58,12 +65,23 @@ export function ManualSignInScreen({ onSubmit, onCancel }: Props) {
             keyboardType="url"
           />
 
+          <Text style={styles.fieldLabel}>Order ID</Text>
+          <TextInput
+            style={styles.input}
+            value={orderId}
+            onChangeText={setOrderId}
+            placeholder="e.g. 9"
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="number-pad"
+          />
+
           <Text style={styles.fieldLabel}>Token</Text>
           <TextInput
             style={styles.input}
             value={token}
             onChangeText={setToken}
-            placeholder="Shared courier token"
+            placeholder="Order access token"
             autoCapitalize="none"
             autoCorrect={false}
           />

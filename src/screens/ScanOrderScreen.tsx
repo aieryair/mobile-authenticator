@@ -2,15 +2,15 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { parseSignInQr } from '../lib/qr';
-import type { SignInPayload } from '../lib/qr';
+import { parseOrderQr } from '../lib/qr';
+import type { OrderQrPayload } from '../lib/qr';
 
 interface Props {
-  onScanned: (payload: SignInPayload) => void;
+  onScanned: (payload: OrderQrPayload) => void;
   onCancel: () => void;
 }
 
-export function SignInScreen({ onScanned, onCancel }: Props) {
+export function ScanOrderScreen({ onScanned, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -20,10 +20,10 @@ export function SignInScreen({ onScanned, onCancel }: Props) {
     }
     setScanned(true);
     try {
-      const payload = parseSignInQr(data);
+      const payload = parseOrderQr(data);
       onScanned(payload);
     } catch {
-      Alert.alert('Not a valid sign-in QR code', 'Ask the admin for a new code and try again.', [
+      Alert.alert('Not a valid order QR code', "Ask the admin for this order's QR code and try again.", [
         { text: 'OK', onPress: () => setScanned(false) },
       ]);
     }
@@ -38,7 +38,7 @@ export function SignInScreen({ onScanned, onCancel }: Props) {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.center}>
           <Text style={styles.message}>
-            Camera access is needed to scan the sign-in QR code.
+            Camera access is needed to scan an order's QR code.
             {!permission.canAskAgain
               ? ' Enable it for this app in your device Settings.'
               : ''}
@@ -68,7 +68,7 @@ export function SignInScreen({ onScanned, onCancel }: Props) {
         <Pressable style={styles.cancelButton} onPress={onCancel}>
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>
-        <Text style={styles.instructions}>Scan the sign-in QR code from the admin</Text>
+        <Text style={styles.instructions}>Scan the QR code on the order&apos;s admin page</Text>
         <View style={styles.frame} pointerEvents="none" />
       </SafeAreaView>
     </View>

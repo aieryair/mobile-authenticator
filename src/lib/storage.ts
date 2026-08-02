@@ -1,28 +1,34 @@
 import * as SecureStore from 'expo-secure-store';
+import type { OrderQrPayload } from './qr';
 
-const CREDENTIALS_KEY = 'credentials';
+const ORDERS_KEY = 'scannedOrders';
 const COURIER_LABEL_KEY = 'courierLabel';
-const CLAIMED_ORDER_KEY = 'claimedOrderId';
 
-export interface Credentials {
-  apiUrl: string;
-  token: string;
+// A scanned order's own {orderId, apiUrl, token} — same shape as the QR
+// payload, since scanning is what produces it.
+export type OrderCredentials = OrderQrPayload;
+
+export async function loadScannedOrders(): Promise<OrderCredentials[]> {
+  const raw = await SecureStore.getItemAsync(ORDERS_KEY);
+  return raw ? (JSON.parse(raw) as OrderCredentials[]) : [];
 }
 
-export async function loadCredentials(): Promise<Credentials | null> {
-  const raw = await SecureStore.getItemAsync(CREDENTIALS_KEY);
-  return raw ? (JSON.parse(raw) as Credentials) : null;
+async function saveScannedOrders(orders: OrderCredentials[]): Promise<void> {
+  await SecureStore.setItemAsync(ORDERS_KEY, JSON.stringify(orders));
 }
 
-export async function saveCredentials(credentials: Credentials): Promise<void> {
-  await SecureStore.setItemAsync(CREDENTIALS_KEY, JSON.stringify(credentials));
+// Adds a newly scanned order, or refreshes its token/apiUrl if it was
+// already scanned before (rescanning is the recovery path).
+export async function upsertScannedOrder(entry: OrderCredentials): Promise<void> {
+  const orders = await loadScannedOrders();
+  const next = orders.filter((o) => o.orderId !== entry.orderId);
+  next.push(entry);
+  await saveScannedOrders(next);
 }
 
-// Clears only the token/apiUrl. Used when the admin rotates the token (401):
-// the courier's name and any in-progress delivery are still valid and should
-// survive so the app can resume straight into it once they re-authenticate.
-export async function clearCredentials(): Promise<void> {
-  await SecureStore.deleteItemAsync(CREDENTIALS_KEY);
+export async function removeScannedOrder(orderId: number): Promise<void> {
+  const orders = await loadScannedOrders();
+  await saveScannedOrders(orders.filter((o) => o.orderId !== orderId));
 }
 
 export async function loadCourierLabel(): Promise<string | null> {
@@ -31,25 +37,4 @@ export async function loadCourierLabel(): Promise<string | null> {
 
 export async function saveCourierLabel(courierLabel: string): Promise<void> {
   await SecureStore.setItemAsync(COURIER_LABEL_KEY, courierLabel);
-}
-
-export async function loadClaimedOrderId(): Promise<number | null> {
-  const raw = await SecureStore.getItemAsync(CLAIMED_ORDER_KEY);
-  return raw ? Number(raw) : null;
-}
-
-export async function saveClaimedOrderId(id: number): Promise<void> {
-  await SecureStore.setItemAsync(CLAIMED_ORDER_KEY, String(id));
-}
-
-export async function clearClaimedOrderId(): Promise<void> {
-  await SecureStore.deleteItemAsync(CLAIMED_ORDER_KEY);
-}
-
-// Full reset for an explicit Log Out: forgets the courier's name and any
-// claimed order too, unlike clearCredentials().
-export async function clearAll(): Promise<void> {
-  await SecureStore.deleteItemAsync(CREDENTIALS_KEY);
-  await SecureStore.deleteItemAsync(COURIER_LABEL_KEY);
-  await SecureStore.deleteItemAsync(CLAIMED_ORDER_KEY);
 }

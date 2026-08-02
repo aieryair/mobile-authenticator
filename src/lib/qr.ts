@@ -1,5 +1,6 @@
-export interface SignInPayload {
+export interface OrderQrPayload {
   apiUrl: string;
+  orderId: number;
   token: string;
 }
 
@@ -7,7 +8,7 @@ export function normalizeApiUrl(apiUrl: string): string {
   return apiUrl.trim().replace(/\/+$/, '');
 }
 
-export function parseSignInQr(data: string): SignInPayload {
+export function parseOrderQr(data: string): OrderQrPayload {
   let parsed: unknown;
   try {
     parsed = JSON.parse(data);
@@ -15,15 +16,21 @@ export function parseSignInQr(data: string): SignInPayload {
     throw new Error('QR code does not contain valid JSON.');
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    typeof (parsed as Record<string, unknown>).apiUrl !== 'string' ||
-    typeof (parsed as Record<string, unknown>).token !== 'string'
-  ) {
-    throw new Error('QR code is missing apiUrl or token.');
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('QR code is missing apiUrl, orderId, or token.');
   }
 
-  const { apiUrl, token } = parsed as { apiUrl: string; token: string };
-  return { apiUrl: normalizeApiUrl(apiUrl), token: token.trim() };
+  const obj = parsed as Record<string, unknown>;
+  const orderId = typeof obj.orderId === 'string' ? Number(obj.orderId) : obj.orderId;
+
+  if (
+    typeof obj.apiUrl !== 'string' ||
+    typeof obj.token !== 'string' ||
+    typeof orderId !== 'number' ||
+    !Number.isFinite(orderId)
+  ) {
+    throw new Error('QR code is missing apiUrl, orderId, or token.');
+  }
+
+  return { apiUrl: normalizeApiUrl(obj.apiUrl), orderId, token: obj.token.trim() };
 }

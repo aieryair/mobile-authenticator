@@ -4,21 +4,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 interface Props {
   onScanPress: () => void;
   onManualPress: () => void;
+  onCancel: () => void;
 }
 
-export function SignInChoiceScreen({ onScanPress, onManualPress }: Props) {
+export function AddOrderScreen({ onScanPress, onManualPress, onCancel }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.content}>
-        <Text style={styles.title}>Deckonomics Courier</Text>
+        <Text style={styles.title}>Add an Order</Text>
         <Text style={styles.subtitle}>
-          Sign in with the code from the admin to see available orders.
+          Scan the QR code on the order&apos;s admin page. That code is the order&apos;s access —
+          nothing to sign in with first.
         </Text>
         <Pressable style={styles.primaryButton} onPress={onScanPress}>
           <Text style={styles.primaryButtonText}>Scan QR Code</Text>
         </Pressable>
         <Pressable style={styles.secondaryButton} onPress={onManualPress}>
           <Text style={styles.secondaryButtonText}>Enter Manually</Text>
+        </Pressable>
+        <Pressable style={styles.cancelLink} onPress={onCancel}>
+          <Text style={styles.cancelLinkText}>Cancel</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -68,5 +73,13 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 16,
     fontWeight: '600',
+  },
+  cancelLink: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  cancelLinkText: {
+    color: '#4a90d9',
+    fontSize: 15,
   },
 });
