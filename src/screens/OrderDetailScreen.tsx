@@ -77,10 +77,20 @@ export function OrderDetailScreen({
     Alert.alert(title, err.message);
   };
 
+  // A delivered order needs nothing further from this device, so it's
+  // dropped from the local list automatically — whether this screen's own
+  // Deliver action just caused that or the admin side did it independently.
+  const applyOrder = (fetched: Order) => {
+    setOrder(fetched);
+    if (fetched.status === 'completed') {
+      onRemoved();
+    }
+  };
+
   const fetchOrder = async () => {
     try {
       const result = await getOrder(creds);
-      setOrder(result.order);
+      applyOrder(result.order);
     } catch (error) {
       handleFailure(error, 'Could not load order');
     }
@@ -120,7 +130,7 @@ export function OrderDetailScreen({
       }
 
       const previousStatus = current.status;
-      setOrder(fetched);
+      applyOrder(fetched);
 
       if (fetched.status === previousStatus) {
         // No change, or a change this screen's own action already applied
@@ -144,8 +154,8 @@ export function OrderDetailScreen({
           [{ text: 'OK', onPress: onBack }]
         );
       }
-      // shipping -> completed (marked delivered from the admin side) and any
-      // other transition: the setOrder above already synced the UI, no alert.
+      // shipping -> completed (marked delivered from the admin side): the
+      // applyOrder call above already removed it, no alert needed.
 
       if (isTerminalStatus(fetched.status)) {
         clearInterval(intervalId);
@@ -154,7 +164,7 @@ export function OrderDetailScreen({
 
     intervalId = setInterval(tick, POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [creds, onBack]);
+  }, [creds, onBack, onRemoved]);
 
   const handleClaim = async () => {
     const label = courierLabel?.trim();
@@ -165,7 +175,7 @@ export function OrderDetailScreen({
     setSubmitting(true);
     try {
       const result = await claimOrder(creds, label);
-      setOrder(result.order);
+      applyOrder(result.order);
     } catch (error) {
       const err = error as ApiError;
       if (err.status === 409) {
@@ -188,7 +198,7 @@ export function OrderDetailScreen({
           setSubmitting(true);
           try {
             const result = await deliverOrder(creds);
-            setOrder(result.order);
+            applyOrder(result.order);
           } catch (error) {
             handleFailure(error, 'Could not mark delivered');
           } finally {
@@ -211,7 +221,7 @@ export function OrderDetailScreen({
     setSubmitting(true);
     try {
       const result = await reportIssue(creds, reason.trim(), label);
-      setOrder(result.order);
+      applyOrder(result.order);
       setReporting(false);
     } catch (error) {
       handleFailure(error, 'Could not report issue');
