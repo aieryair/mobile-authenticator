@@ -1,4 +1,4 @@
-export type OrderStatus = 'paid' | 'shipping' | 'completed';
+export type OrderStatus = 'paid' | 'shipping' | 'completed' | 'cancelled';
 
 export interface OrderItem {
   card_name: string;

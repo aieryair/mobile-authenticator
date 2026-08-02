@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,7 +17,13 @@ import { claimOrder, deliverOrder, getOrder, reportIssue } from '../lib/api';
 import type { ApiError } from '../lib/api';
 import { loadCourierLabel, saveCourierLabel } from '../lib/storage';
 import type { OrderCredentials } from '../lib/storage';
-import type { Order } from '../types/order';
+import type { Order, OrderStatus } from '../types/order';
+
+const POLL_INTERVAL_MS = 10000;
+
+function isTerminalStatus(status: OrderStatus): boolean {
+  return status !== 'paid' && status !== 'shipping';
+}
 
 interface Props {
   creds: OrderCredentials;
@@ -33,6 +40,16 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const orderRef = useRef<Order | null>(null);
+  const submittingRef = useRef(false);
+
+  useEffect(() => {
+    orderRef.current = order;
+  }, [order]);
+
+  useEffect(() => {
+    submittingRef.current = submitting;
+  }, [submitting]);
 
   useEffect(() => {
     loadCourierLabel().then((label) => {
@@ -75,6 +92,70 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
     fetchOrder().finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [creds.orderId]);
+
+  // Polls the admin-owned status while this order is open, since the admin
+  // dashboard can reassign, cancel, or complete an order out from under the
+  // app at any time. Self-cancels once the order reaches a terminal state.
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+
+    const tick = async () => {
+      const current = orderRef.current;
+      if (!current || isTerminalStatus(current.status)) {
+        clearInterval(intervalId);
+        return;
+      }
+      // Skip while a claim/deliver/report-issue call is in flight, or the
+      // app is backgrounded — nothing to sync with a screen no one sees.
+      if (submittingRef.current || AppState.currentState !== 'active') {
+        return;
+      }
+
+      let fetched: Order;
+      try {
+        const result = await getOrder(creds);
+        fetched = result.order;
+      } catch {
+        // Transient failure (network blip, etc.) — just try again next tick.
+        return;
+      }
+
+      const previousStatus = current.status;
+      setOrder(fetched);
+
+      if (fetched.status === previousStatus) {
+        // No change, or a change this screen's own action already applied
+        // and this poll simply confirmed — nothing to announce.
+        if (isTerminalStatus(fetched.status)) {
+          clearInterval(intervalId);
+        }
+        return;
+      }
+
+      if (previousStatus === 'shipping' && fetched.status === 'paid') {
+        Alert.alert(
+          'Order reassigned',
+          "This order was reassigned by the store — you're no longer delivering it.",
+          [{ text: 'OK', onPress: onBack }]
+        );
+      } else if (previousStatus === 'shipping' && fetched.status === 'cancelled') {
+        Alert.alert(
+          'Order cancelled',
+          "This order was cancelled by the store — please don't deliver it.",
+          [{ text: 'OK', onPress: onBack }]
+        );
+      }
+      // shipping -> completed (marked delivered from the admin side) and any
+      // other transition: the setOrder above already synced the UI, no alert.
+
+      if (isTerminalStatus(fetched.status)) {
+        clearInterval(intervalId);
+      }
+    };
+
+    intervalId = setInterval(tick, POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [creds, onBack]);
 
   const persistLabel = async (label: string) => {
     setCourierLabel(label);
@@ -181,7 +262,7 @@ export function OrderDetailScreen({ creds, onBack, onRemoved, onUnauthorized }: 
 
   const isPaid = order.status === 'paid';
   const isShipping = order.status === 'shipping';
-  const isTerminal = !isPaid && !isShipping;
+  const isTerminal = isTerminalStatus(order.status);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
