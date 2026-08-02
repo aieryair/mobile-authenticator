@@ -48,6 +48,7 @@ export default function App() {
         {mode === 'add-choice' && (
           <AddOrderScreen
             onScanPress={() => setMode('add-scan')}
+            onScanned={handleOrderAdded}
             onManualPress={() => setMode('add-manual')}
             onCancel={() => setMode('home')}
           />

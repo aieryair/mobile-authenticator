@@ -30,8 +30,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan the sign-in QR code.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan an order's QR code.",
           "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to upload a QR code image."
         }
       ]
     ],
