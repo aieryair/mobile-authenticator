@@ -28,10 +28,6 @@ export function EditNameScreen({ currentName, onSave, onCancel }: Props) {
       >
         <View style={styles.content}>
           <Text style={styles.title}>Your Name</Text>
-          <Text style={styles.subtitle}>
-            Shown to the store so they know who&apos;s delivering each order. You only need to
-            set this once — come back here any time to change it.
-          </Text>
           <TextInput
             style={styles.input}
             value={name}
@@ -74,10 +70,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#888',
     marginBottom: 16,
   },
   input: {
