@@ -123,8 +123,9 @@ export function HomeScreen({ courierLabel, onAddOrder, onSelectOrder, onEditName
             <Pressable
               style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}
               onPress={() => handleRemove(item.creds.orderId)}
+              hitSlop={4}
             >
-              <Text style={styles.removeText}>Remove</Text>
+              <Text style={styles.removeText}>✕</Text>
             </Pressable>
           </View>
         )}
@@ -226,11 +227,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   removeButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 16,
   },
   removeText: {
-    color: '#d9534f',
+    color: '#bbb',
     fontSize: 13,
   },
 });
