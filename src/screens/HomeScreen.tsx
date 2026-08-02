@@ -77,7 +77,7 @@ export function HomeScreen({ courierLabel, onAddOrder, onSelectOrder, onEditName
       <View style={styles.header}>
         <Text style={styles.title}>My Orders</Text>
         <Pressable style={styles.scanButton} onPress={onAddOrder}>
-          <Text style={styles.scanButtonText}>Scan QR Code</Text>
+          <Text style={styles.scanButtonText}>Add Order</Text>
         </Pressable>
       </View>
       <Pressable style={styles.nameRow} onPress={onEditName}>

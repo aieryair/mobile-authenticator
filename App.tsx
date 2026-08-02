@@ -8,11 +8,10 @@ import type { OrderCredentials } from './src/lib/storage';
 import { AddOrderScreen } from './src/screens/AddOrderScreen';
 import { EditNameScreen } from './src/screens/EditNameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
-import { ManualOrderEntryScreen } from './src/screens/ManualOrderEntryScreen';
 import { OrderDetailScreen } from './src/screens/OrderDetailScreen';
 import { ScanOrderScreen } from './src/screens/ScanOrderScreen';
 
-type Mode = 'home' | 'add-choice' | 'add-scan' | 'add-manual' | 'order-detail' | 'edit-name';
+type Mode = 'home' | 'add-choice' | 'add-scan' | 'order-detail' | 'edit-name';
 
 export default function App() {
   const [mode, setMode] = useState<Mode>('home');
@@ -71,15 +70,11 @@ export default function App() {
           <AddOrderScreen
             onScanPress={() => setMode('add-scan')}
             onScanned={handleOrderAdded}
-            onManualPress={() => setMode('add-manual')}
             onCancel={() => setMode('home')}
           />
         )}
         {mode === 'add-scan' && (
           <ScanOrderScreen onScanned={handleOrderAdded} onCancel={() => setMode('add-choice')} />
-        )}
-        {mode === 'add-manual' && (
-          <ManualOrderEntryScreen onSubmit={handleOrderAdded} onCancel={() => setMode('add-choice')} />
         )}
         {mode === 'order-detail' && selectedOrder && (
           <OrderDetailScreen

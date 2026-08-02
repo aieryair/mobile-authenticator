@@ -9,11 +9,10 @@ import type { OrderQrPayload } from '../lib/qr';
 interface Props {
   onScanPress: () => void;
   onScanned: (payload: OrderQrPayload) => void;
-  onManualPress: () => void;
   onCancel: () => void;
 }
 
-export function AddOrderScreen({ onScanPress, onScanned, onManualPress, onCancel }: Props) {
+export function AddOrderScreen({ onScanPress, onScanned, onCancel }: Props) {
   const [uploading, setUploading] = useState(false);
 
   const handleUploadPress = async () => {
@@ -52,13 +51,8 @@ export function AddOrderScreen({ onScanPress, onScanned, onManualPress, onCancel
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.content}>
-        <Text style={styles.title}>Add an Order</Text>
-        <Text style={styles.subtitle}>
-          Scan the QR code on the order&apos;s admin page. That code is the order&apos;s access —
-          nothing to sign in with first.
-        </Text>
         <Pressable style={styles.primaryButton} onPress={onScanPress} disabled={uploading}>
-          <Text style={styles.primaryButtonText}>Scan QR Code</Text>
+          <Text style={styles.primaryButtonText}>Scan QR</Text>
         </Pressable>
         <Pressable
           style={[styles.secondaryButton, uploading && styles.buttonDisabled]}
@@ -70,9 +64,6 @@ export function AddOrderScreen({ onScanPress, onScanned, onManualPress, onCancel
           ) : (
             <Text style={styles.secondaryButtonText}>Upload QR Image</Text>
           )}
-        </Pressable>
-        <Pressable style={styles.secondaryButton} onPress={onManualPress} disabled={uploading}>
-          <Text style={styles.secondaryButtonText}>Enter Manually</Text>
         </Pressable>
         <Pressable style={styles.cancelLink} onPress={onCancel} disabled={uploading}>
           <Text style={styles.cancelLinkText}>Cancel</Text>
@@ -92,16 +83,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     gap: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 20,
   },
   primaryButton: {
     backgroundColor: '#4a90d9',
